@@ -1,13 +1,6 @@
 package vista;
 
 import java.awt.EventQueue;
-
-import javax.swing.JFrame;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.border.EmptyBorder;
-import javax.swing.JButton;
-
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.sql.Connection;
@@ -15,15 +8,15 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import javax.swing.JTable;
+
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.JScrollPane;
+
 import com.itextpdf.text.Document;
 import com.itextpdf.text.DocumentException;
 import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
 
 public class TablaReporte extends JFrame {
 
@@ -33,119 +26,105 @@ public class TablaReporte extends JFrame {
     private JButton btnActualizarReporte;
 
     public static void main(String[] args) {
-        EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                try {
-                    TablaReporte frame = new TablaReporte();
-                    frame.setVisible(true);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+        EventQueue.invokeLater(() -> {
+            try {
+                TablaReporte frame = new TablaReporte();
+                frame.setVisible(true);
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         });
     }
 
-    @SuppressWarnings("serial")
-	public TablaReporte() {
+    public TablaReporte() {
         setTitle("Reporte Usuario");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setBounds(100, 100, 531, 404);
+        setBounds(100, 100, 600, 450);
+        setLocationRelativeTo(null); // Centra la ventana
         contentPane = new JPanel();
         contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
         setContentPane(contentPane);
         contentPane.setLayout(null);
 
         btnActualizarReporte = new JButton("Actualizar");
-        btnActualizarReporte.setBounds(150, 297, 105, 23);
-        btnActualizarReporte.addActionListener(e -> {
-            Reporte vr = new Reporte();
-            vr.setVisible(true);
-            TablaReporte.this.dispose();
-        });
+        btnActualizarReporte.setBounds(150, 350, 120, 30);
+        btnActualizarReporte.addActionListener(e -> abrirVentanaActualizar());
         contentPane.add(btnActualizarReporte);
 
-        
         JScrollPane scrollPane = new JScrollPane();
-        scrollPane.setBounds(10, 11, 495, 186);
+        scrollPane.setBounds(10, 10, 570, 300);
         contentPane.add(scrollPane);
 
+        // Configuración inicial de la tabla con filas vacías
         tablaReporteUsuario = new JTable();
         tablaReporteUsuario.setModel(new DefaultTableModel(
-            new Object[][] {
-                {null, null, null, null},
-                {null, null, null, null},
-                {null, null, null, null},
-                {null, null, null, null},
-                {null, null, null, null},
-                {null, null, null, null},
-                {null, null, null, null},
-                {null, null, null, null},
-                {null, null, null, null},
-                {null, null, null, null}
-            },
+            new Object[][] {},
             new String[] {
                 "Descripcion del problema", "Calles/Referencias", "Localidad", "Fecha"
             }
-        ) {
-            boolean[] columnEditables = new boolean[] { false, false, false, false };
-
-            public boolean isCellEditable(int row, int column) {
-                return columnEditables[column];
-            }
-        });
-
-        tablaReporteUsuario.getTableHeader().setReorderingAllowed(false);
-        tablaReporteUsuario.getColumnModel().getColumn(0).setResizable(false);
-        tablaReporteUsuario.getColumnModel().getColumn(1).setResizable(false);
-        tablaReporteUsuario.getColumnModel().getColumn(2).setResizable(false);
-        tablaReporteUsuario.getColumnModel().getColumn(3).setResizable(false);
-
+        ));
         scrollPane.setViewportView(tablaReporteUsuario);
-        
-        JButton btnGenerarPdf = new JButton("Generar Pdf");
-        btnGenerarPdf.addActionListener(new ActionListener() {
-        	public void actionPerformed(ActionEvent e) {
-        		generarPDF();
-        	}
-        });
-        btnGenerarPdf.setBounds(10, 297, 105, 23);
+
+        JButton btnGenerarPdf = new JButton("Generar PDF");
+        btnGenerarPdf.setBounds(10, 350, 120, 30);
+        btnGenerarPdf.addActionListener(e -> generarPDF());
         contentPane.add(btnGenerarPdf);
+
+        cargarDatos(); // Carga los datos al inicializar la ventana
+    }
+
+    private void cargarDatos() {
+        DefaultTableModel modelo = (DefaultTableModel) tablaReporteUsuario.getModel();
+        modelo.setRowCount(0); // Limpia la tabla
+
+        try (Connection cn = DriverManager.getConnection("jdbc:mysql://localhost:3306/admin", "root", "");
+             PreparedStatement ps = cn.prepareStatement("SELECT Describe_el_problema, DireccionCompleta, Localidad, Fecha FROM problemas");
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                modelo.addRow(new Object[] {
+                    rs.getString("Describe_el_problema"),
+                    rs.getString("DireccionCompleta"),
+                    rs.getString("Localidad"),
+                    rs.getString("Fecha")
+                });
+            }
+
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(this, "Error al cargar los datos: " + e.getMessage());
+        }
     }
 
     private void generarPDF() {
         Document documento = new Document();
         try {
-        	String ruta = System.getProperty("user.home") + "/Desktop/Reporte_Usuarios.pdf";
-            PdfWriter.getInstance(documento, new FileOutputStream(ruta + "/Desktop/Reporte_Usuarios.pdf"));
+            String ruta = System.getProperty("user.home") + "/Desktop/Reporte_Usuarios.pdf";
+            PdfWriter.getInstance(documento, new FileOutputStream(ruta));
             documento.open();
 
-            PdfPTable tabla = new PdfPTable(4);
-            tabla.addCell("Descripcion del problema");
-            tabla.addCell("Calles/Referencias");
-            tabla.addCell("Localidad");
-            tabla.addCell("Fecha");
-
-            try (Connection cn = DriverManager.getConnection("jdbc:mysql://localhost:3306/Registros", "root", "");
-                 PreparedStatement ps = cn.prepareStatement("SELECT * FROM registros");
-                 ResultSet rs = ps.executeQuery()) {
-
-                while (rs.next()) {
-                    tabla.addCell(rs.getString(1));
-                    tabla.addCell(rs.getString(2));
-                    tabla.addCell(rs.getString(3));
-                    tabla.addCell(rs.getString(4));
-                }
-
-                documento.add(tabla);
-                JOptionPane.showMessageDialog(null, "Reporte creado exitosamente en el escritorio.");
-            } catch (SQLException e) {
-                JOptionPane.showMessageDialog(null, "Error al consultar la base de datos: " + e.getMessage());
+            PdfPTable tabla = new PdfPTable(tablaReporteUsuario.getColumnCount());
+            for (int i = 0; i < tablaReporteUsuario.getColumnCount(); i++) {
+                tabla.addCell(tablaReporteUsuario.getColumnName(i));
             }
 
+            DefaultTableModel modelo = (DefaultTableModel) tablaReporteUsuario.getModel();
+            for (int i = 0; i < modelo.getRowCount(); i++) {
+                for (int j = 0; j < modelo.getColumnCount(); j++) {
+                    tabla.addCell(modelo.getValueAt(i, j) != null ? modelo.getValueAt(i, j).toString() : "");
+                }
+            }
+
+            documento.add(tabla);
+            JOptionPane.showMessageDialog(this, "PDF generado exitosamente en el escritorio.");
+
         } catch (FileNotFoundException | DocumentException e) {
-            JOptionPane.showMessageDialog(null, "Error al generar el PDF: " + e.getMessage());
+            JOptionPane.showMessageDialog(this, "Error al generar el PDF: " + e.getMessage());
         } finally {
             documento.close();
         }
+    }
+
+    private void abrirVentanaActualizar() {
+        JOptionPane.showMessageDialog(this, "Funcionalidad no implementada aún.");
     }
 }

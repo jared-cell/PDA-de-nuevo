@@ -19,9 +19,7 @@ public class ControladorUsuario {
 
         try {
             
-            ps = cn.prepareStatement("INSERT INTO tablaadministrador (NombreCompleto, Correo, NumeroTelefonico) VALUES (?, ?, ?)");
-            
-            
+            ps = cn.prepareStatement("INSERT INTO nuevosUsuarios (Nombre_Completo, Correo, Numero_Telefonico) VALUES (?,?,?)");
             ps.setString(1, nu.getNombre_Completo());
             ps.setString(2, nu.getCorreo());
             ps.setString(3, nu.getNumero_Telefonico());

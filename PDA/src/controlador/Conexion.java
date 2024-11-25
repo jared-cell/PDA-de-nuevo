@@ -13,7 +13,7 @@ public class Conexion {
 	
 	public Connection conectar() {
 		try {
-			cn=DriverManager.getConnection("jdbc:mysql://localhost:3306/Registros","root","");
+			cn=DriverManager.getConnection("jdbc:mysql://localhost:3306/admin","root","");
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			//e.printStackTrace();
